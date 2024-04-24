@@ -79,16 +79,22 @@ impl Parser {
         assert!(self.consume_char() == '<');
         let tag_name = self.parse_tag_name();
         let attrs = self.parse_attributes();
-        assert!(self.consume_char() == '>');
 
-        let children = self.parse_nodes();
+        if self.is_self_closing(&tag_name) {
+            assert!(self.consume_char() == '/');
+            assert!(self.consume_char() == '>');
+            return dom::elem(tag_name, attrs, vec![]);
+        } else {
+            assert!(self.consume_char() == '>');
+            let children = self.parse_nodes();
 
-        assert!(self.consume_char() == '<');
-        assert!(self.consume_char() == '/');
-        assert!(self.parse_tag_name() == tag_name);
-        assert!(self.consume_char() == '>');
+            assert!(self.consume_char() == '<');
+            assert!(self.consume_char() == '/');
+            assert!(self.parse_tag_name() == tag_name);
+            assert!(self.consume_char() == '>');
 
-        return dom::elem(tag_name, attrs, children);
+            return dom::elem(tag_name, attrs, children);
+        }
     }
 
     fn parse_attr(&mut self) -> (String, String) {
@@ -110,7 +116,7 @@ impl Parser {
         let mut attributes = HashMap::new();
         loop {
             self.consume_whitespace();
-            if self.next_char() == '>' {
+            if self.next_char() == '>' || self.next_char() == '/' {
                 break;
             }
             let (name, value) = self.parse_attr();
@@ -130,5 +136,9 @@ impl Parser {
             nodes.push(self.parse_node())
         }
         return nodes;
+    }
+
+    fn is_self_closing(&self, tag_name: &str) -> bool {
+        matches!(tag_name, "img")
     }
 }
