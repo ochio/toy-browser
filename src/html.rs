@@ -53,6 +53,24 @@ impl Parser {
         return result;
     }
 
+    fn consume_comment(&mut self) {
+        assert!(self.consume_char() == '<');
+        assert!(self.consume_char() == '!');
+        assert!(self.consume_char() == '-');
+        assert!(self.consume_char() == '-');
+
+        while !self.eof() {
+            if self.starts_with("-->") {
+                assert!(self.consume_char() == '-');
+                assert!(self.consume_char() == '-');
+                assert!(self.consume_char() == '>');
+                break;
+            } else {
+                self.consume_char();
+            }
+        }
+    }
+
     fn consume_whitespace(&mut self) {
         self.consume_while(char::is_whitespace);
     }
@@ -130,6 +148,10 @@ impl Parser {
         let mut nodes = Vec::new();
         loop {
             self.consume_whitespace();
+            if self.starts_with("<!--") {
+                self.consume_comment();
+                continue;
+            }
             if self.eof() || self.starts_with("</") {
                 break;
             }
