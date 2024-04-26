@@ -114,6 +114,10 @@ impl Parser {
         return selectors;
     }
 
+    fn parse_identifier(&mut self) -> String {
+        self.consume_while(valid_identifier_char)
+    }
+
     fn parse_simple_selector(&mut self) -> SimpleSlector {
         let mut selector = SimpleSlector {
             tag_name: None,
