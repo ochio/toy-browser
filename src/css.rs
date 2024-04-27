@@ -1,37 +1,45 @@
+#[derive(Debug)]
 pub struct Stylesheet {
     rules: Vec<Rule>,
 }
 
+#[derive(Debug)]
 struct Rule {
     selectors: Vec<Selector>,
     declarations: Vec<Declaration>,
 }
 
+#[derive(Debug)]
 enum Selector {
     Simple(SimpleSlector),
 }
 
+#[derive(Debug)]
 struct SimpleSlector {
     tag_name: Option<String>,
     id: Option<String>,
     class: Vec<String>,
 }
 
+#[derive(Debug)]
 struct Declaration {
     name: String,
     value: Value,
 }
 
+#[derive(Debug)]
 enum Value {
     Keyword(String),
     Length(f32, Unit),
     ColorValue(Color),
 }
 
+#[derive(Debug)]
 enum Unit {
     Px,
 }
 
+#[derive(Debug)]
 struct Color {
     r: u8,
     g: u8,
@@ -45,7 +53,7 @@ pub fn parse(source: String) -> Stylesheet {
         input: source,
     };
     Stylesheet {
-        rules: parser.parse_rule(),
+        rules: parser.parse_rules(),
     }
 }
 
@@ -87,7 +95,19 @@ impl Parser {
         self.consume_while(char::is_whitespace);
     }
 
-    fn parse_rules(&mut self) -> Rule {
+    fn parse_rules(&mut self) -> Vec<Rule> {
+        let mut rules = Vec::new();
+        loop {
+            self.consume_whitespace();
+            if self.eof() {
+                break;
+            }
+            rules.push(self.parse_rule())
+        }
+        rules
+    }
+
+    fn parse_rule(&mut self) -> Rule {
         Rule {
             selectors: self.parse_selectors(),
             declarations: self.parse_declarations(),
@@ -112,6 +132,78 @@ impl Parser {
         }
         selectors.sort_by(|a, b| b.specificity().cmp(&a.specificity()));
         return selectors;
+    }
+
+    fn parse_declarations(&mut self) -> Vec<Declaration> {
+        assert_eq!(self.consume_char(), '{');
+        let mut declarations = Vec::new();
+        loop {
+            self.consume_whitespace();
+            if self.next_char() == '}' {
+                self.consume_char();
+                break;
+            }
+            declarations.push(self.parse_declaration())
+        }
+        return declarations;
+    }
+
+    fn parse_declaration(&mut self) -> Declaration {
+        let property_name = self.parse_identifier();
+        self.consume_whitespace();
+        assert_eq!(self.consume_char(), ':');
+        self.consume_whitespace();
+        let value = self.parse_value();
+        self.consume_whitespace();
+        assert_eq!(self.consume_char(), ';');
+
+        return Declaration {
+            name: property_name,
+            value: value,
+        };
+    }
+
+    fn parse_value(&mut self) -> Value {
+        match self.next_char() {
+            '0'..='9' => self.parse_length(),
+            '#' => self.parse_color(),
+            _ => Value::Keyword(self.parse_identifier()),
+        }
+    }
+
+    fn parse_length(&mut self) -> Value {
+        Value::Length(self.parse_float(), self.parse_unit())
+    }
+
+    fn parse_float(&mut self) -> f32 {
+        let s = self.consume_while(|c| match c {
+            '0'..='9' | '.' => true,
+            _ => false,
+        });
+        s.parse().unwrap()
+    }
+
+    fn parse_unit(&mut self) -> Unit {
+        match &*self.parse_identifier().to_ascii_lowercase() {
+            "px" => Unit::Px,
+            _ => panic!("unrecognized unit"),
+        }
+    }
+
+    fn parse_color(&mut self) -> Value {
+        assert_eq!(self.consume_char(), '#');
+        Value::ColorValue(Color {
+            r: self.parse_hex_pair(),
+            g: self.parse_hex_pair(),
+            b: self.parse_hex_pair(),
+            a: 255,
+        })
+    }
+
+    fn parse_hex_pair(&mut self) -> u8 {
+        let s = &self.input[self.pos..self.pos + 2];
+        self.pos += 2;
+        u8::from_str_radix(s, 16).unwrap()
     }
 
     fn parse_identifier(&mut self) -> String {
@@ -158,5 +250,12 @@ impl Selector {
         let b = simple.class.len();
         let c = simple.tag_name.iter().count();
         return (a, b, c);
+    }
+}
+
+fn valid_identifier_char(c: char) -> bool {
+    match c {
+        'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => true,
+        _ => false,
     }
 }
