@@ -10,7 +10,7 @@ struct Rule {
 }
 
 #[derive(Debug)]
-enum Selector {
+pub enum Selector {
     Simple(SimpleSlector),
 }
 
@@ -28,7 +28,7 @@ struct Declaration {
 }
 
 #[derive(Debug)]
-enum Value {
+pub enum Value {
     Keyword(String),
     Length(f32, Unit),
     ColorValue(Color),
