@@ -1,45 +1,45 @@
 #[derive(Debug)]
 pub struct Stylesheet {
-    rules: Vec<Rule>,
+    pub rules: Vec<Rule>,
 }
 
 #[derive(Debug)]
-struct Rule {
-    selectors: Vec<Selector>,
-    declarations: Vec<Declaration>,
+pub struct Rule {
+    pub selectors: Vec<Selector>,
+    pub declarations: Vec<Declaration>,
 }
 
 #[derive(Debug)]
 pub enum Selector {
-    Simple(SimpleSlector),
+    Simple(SimpleSelector),
 }
 
 #[derive(Debug)]
-struct SimpleSlector {
-    tag_name: Option<String>,
-    id: Option<String>,
-    class: Vec<String>,
+pub struct SimpleSelector {
+    pub tag_name: Option<String>,
+    pub id: Option<String>,
+    pub class: Vec<String>,
 }
 
 #[derive(Debug)]
-struct Declaration {
-    name: String,
-    value: Value,
+pub struct Declaration {
+    pub name: String,
+    pub value: Value,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Keyword(String),
     Length(f32, Unit),
     ColorValue(Color),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Unit {
     Px,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Color {
     r: u8,
     g: u8,
@@ -210,8 +210,8 @@ impl Parser {
         self.consume_while(valid_identifier_char)
     }
 
-    fn parse_simple_selector(&mut self) -> SimpleSlector {
-        let mut selector = SimpleSlector {
+    fn parse_simple_selector(&mut self) -> SimpleSelector {
+        let mut selector = SimpleSelector {
             tag_name: None,
             id: None,
             class: Vec::new(),
