@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     css::{Rule, Selector, SimpleSelector, Specificity, Stylesheet, Value},
@@ -16,18 +16,26 @@ pub struct StyledNode<'a> {
 
 type MatchedRule<'a> = (Specificity, &'a Rule);
 
-pub fn style_tree<'a>(root: &'a Node, stylesheet: &'a Stylesheet) -> StyledNode<'a> {
+pub fn style_tree<'a>(
+    root: &'a Node,
+    stylesheet: &'a Stylesheet,
+    parent_style: Option<&PropertyMap>,
+) -> StyledNode<'a> {
+    let current_style = match &root.node_type {
+        NodeType::Element(ref elem) => specified_values(elem, stylesheet, parent_style),
+        NodeType::Text(_) => parent_style.cloned().unwrap_or_default(),
+    };
+
+    let children_styles = root
+        .children
+        .iter()
+        .map(|child| style_tree(child, stylesheet, Some(&current_style)))
+        .collect();
+
     StyledNode {
         node: root,
-        specified_values: match root.node_type {
-            NodeType::Element(ref elem) => specified_values(elem, stylesheet),
-            NodeType::Text(_) => HashMap::new(),
-        },
-        children: root
-            .children
-            .iter()
-            .map(|child| style_tree(child, stylesheet))
-            .collect(),
+        specified_values: current_style,
+        children: children_styles,
     }
 }
 
@@ -72,7 +80,11 @@ fn matching_rules<'a>(elem: &ElementData, stylesheet: &'a Stylesheet) -> Vec<Mat
         .collect()
 }
 
-fn specified_values(elem: &ElementData, stylesheet: &Stylesheet) -> PropertyMap {
+fn specified_values(
+    elem: &ElementData,
+    stylesheet: &Stylesheet,
+    parent_style: Option<&PropertyMap>,
+) -> PropertyMap {
     let mut values = HashMap::new();
     let mut rules = matching_rules(elem, stylesheet);
 
@@ -83,5 +95,23 @@ fn specified_values(elem: &ElementData, stylesheet: &Stylesheet) -> PropertyMap 
         }
     }
 
+    let inheritable_props = inheritable_properties();
+    if let Some(parent_style) = parent_style {
+        for &prop in inheritable_props.iter() {
+            if !values.contains_key(prop) {
+                if let Some(value) = parent_style.get(prop) {
+                    values.insert(prop.to_string(), value.clone());
+                }
+            }
+        }
+    }
+
     values
+}
+
+fn inheritable_properties() -> HashSet<&'static str> {
+    let mut props = HashSet::new();
+    props.insert("color");
+    props.insert("font-family");
+    props
 }
