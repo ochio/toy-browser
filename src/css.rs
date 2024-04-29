@@ -27,19 +27,28 @@ pub struct Declaration {
     pub value: Value,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Keyword(String),
     Length(f32, Unit),
     ColorValue(Color),
 }
 
-#[derive(Debug, Clone)]
-enum Unit {
+impl Value {
+    pub fn to_px(&self) -> f32 {
+        match *self {
+            Value::Length(f, Unit::Px) => f,
+            _ => 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Unit {
     Px,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Color {
     r: u8,
     g: u8,
