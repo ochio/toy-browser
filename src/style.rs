@@ -7,7 +7,7 @@ use crate::{
 
 type PropertyMap = HashMap<String, Value>;
 
-enum Display {
+pub enum Display {
     Inline,
     Block,
     None,
