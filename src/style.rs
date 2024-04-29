@@ -7,11 +7,33 @@ use crate::{
 
 type PropertyMap = HashMap<String, Value>;
 
+enum Display {
+    Inline,
+    Block,
+    None,
+}
+
 #[derive(Debug)]
 pub struct StyledNode<'a> {
     node: &'a Node,
     specified_values: PropertyMap,
-    children: Vec<StyledNode<'a>>,
+    pub children: Vec<StyledNode<'a>>,
+}
+
+impl StyledNode<'_> {
+    pub fn value(&self, name: &str) -> Option<Value> {
+        self.specified_values.get(name).map(|v| v.clone())
+    }
+    pub fn display(&self) -> Display {
+        match self.value("display") {
+            Some(Value::Keyword(s)) => match &*s {
+                "block" => Display::Block,
+                "none" => Display::None,
+                _ => Display::Inline,
+            },
+            _ => Display::Inline,
+        }
+    }
 }
 
 type MatchedRule<'a> = (Specificity, &'a Rule);
