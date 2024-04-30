@@ -25,7 +25,7 @@ impl Dimensions {
     }
 
     // paddingの大きさ + borderの太さ分足す
-    fn border_box(self) -> Rect {
+    pub fn border_box(self) -> Rect {
         self.padding_box().expanded_by(self.border)
     }
 
@@ -68,9 +68,9 @@ impl Copy for EdgeSizes {}
 
 #[derive(Debug)]
 pub struct LayoutBox<'a> {
-    dimensions: Dimensions,
-    box_type: BoxType<'a>,
-    children: Vec<LayoutBox<'a>>,
+    pub dimensions: Dimensions,
+    pub box_type: BoxType<'a>,
+    pub children: Vec<LayoutBox<'a>>,
 }
 
 #[derive(Debug)]
